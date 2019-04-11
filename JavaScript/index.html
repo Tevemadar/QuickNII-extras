@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>QuickNII propagation</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <style>
+            html,body,#container{
+                margin:0;
+                height:100%;
+            }
+            #container {
+                display: flex;
+                flex-direction: column;
+            }
+            input,div,textarea {
+                margin: 5px;
+            }
+            #input {
+                height: 20%;
+            }
+            #pretty {
+                height: 20%;
+            }
+            #result {
+                height: 60%;
+            }
+        </style>
+        <script src="propagation.js"></script>
+        <script>
+            function loadfile(event)
+            {
+                var fr=new FileReader();
+                fr.onload=function(){
+                    input.value=fr.result;
+                    parse();
+                };
+                fr.readAsText(event.target.files[0]);
+            }
+            var override=["anchoring","target-resolution"];
+            function prettyJSON(data){
+                return JSON.stringify(data,(k,v)=>override.indexOf(k)>=0?JSON.stringify(v):v,2).replace(/\"\[/g,"[").replace(/\]\"/g,"]");
+            }
+            function parse(){
+                try{
+                    var data=JSON.parse(input.value);
+                    pretty.value=prettyJSON(data);
+                    propagation.propagate(data.slices);
+                    result.value=prettyJSON(data);
+                }catch(ex){
+                    pretty.value="";
+                    result.value=ex;
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div style="position:absolute;right:0px;padding:5px;background:lightgrey"><a href="https://github.com/Tevemadar/QuickNII-extras/JavaScript">Check me on GitHub</a></div>
+        <div id="container">
+            <div>Load file:<input type="file" accept="text/json" oninput="loadfile(event)"></div>
+            <textarea id="input" autofocus placeholder="Or paste QuickNII JSON here" oninput="parse()"></textarea>
+            <div>Formatted input:</div>
+            <textarea id="pretty" readonly placeholder="Formatted input"></textarea>
+            <div>Result:</div>
+            <textarea id="result" readonly placeholder="Result"></textarea>
+        </div>
+    </body>
+</html>
