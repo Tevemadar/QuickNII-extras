@@ -104,7 +104,7 @@ def orthonormalize(arr):
   for i in range(3):
     dot+=arr[i+3]*arr[i+6]
   for i in range(3):
-    arr[i+6]-=arr[i+6]*dot
+    arr[i+6]-=arr[i+3]*dot
   normalize(arr,6)
 
 if __name__=="__main__":

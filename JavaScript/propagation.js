@@ -114,7 +114,7 @@
         for(var i=0;i<3;i++)
             dot+=arr[i+3]*arr[i+6];
         for(var i=0;i<3;i++)
-            arr[i+6]-=arr[i+6]*dot;
+            arr[i+6]-=arr[i+3]*dot;
         normalize(arr,6);
     }
 
