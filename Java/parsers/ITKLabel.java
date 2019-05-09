@@ -2,8 +2,8 @@ package parsers;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,7 +21,7 @@ public class ITKLabel {
     }
 
     public static Map<Integer, ITKLabel> parseLabels(String labelFile) throws Exception {
-        TreeMap<Integer, ITKLabel> palette = new TreeMap<>();
+        Map<Integer, ITKLabel> palette = new LinkedHashMap<>();
         try (BufferedReader br = new BufferedReader(new FileReader(labelFile))) {
             Pattern p = Pattern.compile("\\s*(\\d+)\\s+(\\d+)\\s+(\\d+)\\s+(\\d+)[^\\\"]*\"(.*)\"\\s*");
             String line;

@@ -1,4 +1,4 @@
-# Propagation algorithm and slicer in Java
+# 1) Propagation algorithm and slicer in Java
 Usage:
 
 `java NIISlicer json=<json file> nifti=<nifti file> [label=<label file>] [grayscale] [bin]`
@@ -21,3 +21,14 @@ Loading `.bin` files in Matlab:
     stream.close;
 
 Where `array` is going to be a 2D array containing atlas ID-s for segmentation volumes.
+
+# 2) Cutlas creator sample
+`java PackWHSRatV2Demo` creates a sample package using the following input files:
+
+- `WHS_SD_rat_T2star_v1.01.nii` (T2* MRI volume)
+- `WHS_SD_rat_FA_color_v1.01.nii` (24-bit color FA DTI volume)
+- `WHS_SD_rat_atlas_v2.nii` (segmentation volume)
+- `WHS_SD_rat_atlas_v2.lbl` (segmentation labels)
+
+Atlas files can be acquired from [NITRC](https://www.nitrc.org/projects/whs-sd-atlas/). As `NIISlicer` expects uncompressed NIfTI files anyway, this example also uses uncompressed input volumes. A compressed NIfTI volume can be read after modifying two occurrences of the filename and replacing the corresponding `BufferedInputStream` with `GZipInputStream`  
+While the code uses hardcoded values everywhere, the only "difficult" one is the scaling of grayscale volumes. The range of actual values appearing in the volume has to be acquired somehow so volumes in QuickNII can use the full 8/16-bit range available to them. It is known that the T2* modality uses the range 10.203729 - 32766, simply because it was checked with a suitable `for` loop in 2011.
