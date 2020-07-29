@@ -22,7 +22,22 @@ Loading `.bin` files in Matlab:
 
 Where `array` is going to be a 2D array containing atlas ID-s for segmentation volumes.
 
-# 2) Cutlas creator sample
+# 2) Propagation algorithm and NIfTI builder in Java
+Usage:
+
+`java BuildNII json=<json file> nifti=<nifti file>`
+
+Where
+- `<json file>` is a QuickNII JSON file
+- `<nifti file>` is the uncompressed NIfTI file to be created
+
+BuildNII will look for the actual image files in the current directory.
+
+Example:
+
+`java BuildNII json=series.json nifti=reconstructed.nii`
+
+# 3) Cutlas creator sample
 `java PackWHSRatV2Demo` creates a sample package using the following input files:
 
 - `WHS_SD_rat_T2star_v1.01.nii` (T2* MRI volume)
