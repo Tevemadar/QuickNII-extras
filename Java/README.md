@@ -5,6 +5,13 @@ This folder contains 3 command line programs.
 - BuildNII: example usage of propagation algorithm for building a NIfTI volume from anchored sections
 - Cutlas creator sample with hardcoded data for WHS Rat
 
+NIISlicer and BuildNII are provided in complied format too (Java 8 or later is required), as `QuickNII-extras.zip`.  
+It can be used without unpacking as follows:
+- NIISlicer: `java -cp QuickNII-extras.zip NIISlicer json=<json file> nifti=<nifti file> [label=<label file>] [grayscale] [bin]`
+- BuildNII: `java -cp QuickNII-extras.zip BuildNII json=<json file> nifti=<nifti file>`
+
+Please see the meaning of the parameters below.
+
 # 1) Propagation algorithm and slicer in Java
 Usage:
 
