@@ -1,3 +1,10 @@
+# QuickNII extras - Java
+
+This folder contains 3 command line programs.
+- NIISlicer: example usage of propagation algorithm for slicing NIfTI volumes (similar to what "Export Slices" does in QuickNII)
+- BuildNII: example usage of propagation algorithm for building a NIfTI volume from anchored sections
+- Cutlas creator sample with hardcoded data for WHS Rat
+
 # 1) Propagation algorithm and slicer in Java
 Usage:
 
