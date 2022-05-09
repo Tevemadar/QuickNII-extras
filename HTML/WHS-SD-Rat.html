@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>WHS SD Rat coordinate conversions</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <style>
+            textarea {
+                display: block;
+                width: 100%;
+            }
+            table{
+                border-collapse: collapse;
+            }
+            td {
+                text-align: right;
+            }
+            .noleft{
+                border-left: 0;
+            }
+            .noright{
+                border-right: 0;
+            }
+        </style>
+        <script>
+            let cs = [
+                {
+                    name: "NIfTI voxels RAS",
+                    fromnii: [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]],
+                    tonii: [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+                },
+                {
+                    name: "WHS mm RAS",
+                    fromnii: [[0.0390625, 0, 0, 0], [0, 0.0390625, 0, 0], [0, 0, 0.0390625, 0], [-9.53125, -24.3359375, -9.6875, 1]],
+                    tonii: [[25.6, 0, 0, 0], [0, 25.6, 0, 0], [0, 0, 25.6, 0], [244, 623, 248, 1]]
+                },
+                {
+                    name: "Bregma mm RPI",
+                    fromnii: [[0.039051742, -0.000367872, 0.000839666, 0],
+                        [-0.000270531, -0.038810515, -0.004421499, 0],
+                        [0.000875889, 0.004414466, -0.038802374, 0],
+                        [-9.815462651, 23.49139767, 19.75372551, 1]],
+                    tonii: [[25.5929495, -0.177295515, 0.57402272, 0],
+                        [-0.241088711, -25.43485903, 2.893064534, 0],
+                        [0.550283578, -2.89767363, -25.4295237, 0],
+                        [246, 653, 440, 1]]
+                },
+                {
+                    name: "IAmid mm RPI",
+                    fromnii: [[0.039051742, -0.000367872, 0.000839666, 0],
+                        [-0.000270531, -0.038810515, -0.004421499, 0],
+                        [0.000875889, 0.004414466, -0.038802374, 0],
+                        [-9.815462651, 14.43114894, 14.3031771, 1]],
+                    tonii: [[25.5929495, -0.177295515, 0.57402272, 0],
+                        [-0.241088711, -25.43485903, 2.893064534, 0],
+                        [0.550283578, -2.89767363, -25.4295237, 0],
+                        [246.8150236, 406.7599404, 327.6070343, 1]]
+                }
+            ];
+            
+            function mul(row,mtx){
+                row[3]=1;
+                let ret=[0,0,0];
+                for(let c=0;c<3;c++)
+                    for(let i=0;i<4;i++)
+                        ret[c]+=row[i]*mtx[i][c];
+//                let eps=1e-5;
+//                for(let i=0;i<3;i++)
+//                    if(Math.abs(ret[i])<eps)
+//                        ret[i]=0;
+//                for(let i=0;i<3;i++)
+//                    ret[i]=parseFloat(ret[i].toFixed(3));
+                    
+                return ret;
+            }
+
+            function fullscreen() {
+                document.getElementById("in").style.height = document.getElementById("out").style.height = (window.innerHeight / 2 - 25) + "px";
+            }
+            function startup(){
+                fullscreen();
+                let s_from=document.getElementById("s_from");
+                let s_to=document.getElementById("s_to");
+                for(let system of cs){
+                    let choice=document.createElement("option");
+                    choice.label=system.name;
+                    s_from.appendChild(choice);
+                    choice=document.createElement("option");
+                    choice.label=system.name;
+                    s_to.appendChild(choice);
+                }
+            }
+            function box(row){
+                return "<td class='noright'>"+row[0]+"</td><td class='noleft noright'>"+row[1]+"</td><td class='noleft'>"+row[2]+"</td>";
+            }
+            function parse() {
+                let s1=cs[document.getElementById("s_from").selectedIndex].tonii;
+                let s2=cs[document.getElementById("s_to").selectedIndex].fromnii;
+                let data = document.getElementById("in").value.split(/[^\d\.]+/).map(x => parseFloat(x)).filter(x => !isNaN(x));
+                let html = "";
+                for (let i = 0; i < data.length - 2; i += 3) {
+                    let row=data.slice(i,i+3);
+                    html += "<tr>";
+                    html += box(row);
+                    row=mul(row,s1);
+                    html += box(row.map(x=>parseFloat(x.toFixed(3))));
+                    row=mul(row,s2);
+                    html += box(row.map(x=>parseFloat(x.toFixed(3))));
+                    html += "</tr>";
+                }
+                document.getElementById("out").innerHTML = html;
+            }
+        </script>
+    </head>
+    <body onload="startup();
+            parse()" onresize="fullscreen()">
+        <textarea id="in" autofocus placeholder="Enter coordinate-triplets here" oninput="parse()">Examples:
+  WHS origin: 244 623 248
+  Bregma: 246, 653, 440
+  Lambda: 244, 442, 464
+
+  Zeros: 0 0 0
+
+Any occurrences of digits (12) and dots neighbored by digits (1. .2) are treated as coordinates, everything else is considered separator.
+When 3 coordinates are found, a new line is added to the table. 2 1.</textarea><br>
+<br>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th colspan="3">Source coordinate system<br><select id="s_from" oninput="parse()"></select></th>
+                    <th colspan="3">NIfTI voxels RAS</th>
+                    <th colspan="3">Target coordinate system<br><select id="s_to" oninput="parse()"></select></th>
+                </tr>
+            </thead>
+            <tbody id="out"></tbody>
+        </table>
+    </body>
+</html>

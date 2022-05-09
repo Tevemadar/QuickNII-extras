@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>QuickSplit</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <script>
+        function load(event){
+            let fr=new FileReader();
+            fr.onload=loaded;
+            fr.readAsText(event.target.files[0]);
+        }
+        let json;
+        function loaded(event){
+            try{
+                json=JSON.parse(event.target.result);
+            }catch(ex){
+                document.getElementById("log").innerText=ex;
+            }
+            table();
+        }
+        let filtered;
+        function table(){
+            let filters=document.getElementById("filter").value.trim().split(/\s+/);
+            let clone=JSON.parse(JSON.stringify(json.slices));
+            filtered=[];
+            for(let filter of filters){
+                let current={
+                    filter:filter,
+                    items:[]
+                };
+                filtered.push(current);
+                for(let i=0;i<clone.length;i++)
+                    if(clone[i].filename.indexOf(filter)>=0){
+                        current.items.push(clone.splice(i,1)[0]);
+                        i--;
+                    }
+            }
+            if(clone.length)
+                filtered.unshift({
+                    filter:"Rest",
+                    items:clone
+                });
+            let tbody=document.getElementById("tbody");
+            tbody.innerHTML="";
+            for(let group of filtered)
+                if(group.items.length){
+                    let first=true;
+                    for(let item of group.items){
+                        let tr=document.createElement("tr");
+                        if(first){
+                            let td=document.createElement("td");
+                            td.rowSpan=group.items.length;
+                            let bt=document.createElement("button");
+                            bt.innerText=group.filter;
+                            bt.onclick=()=>{
+                                let filename=prompt("Enter filename");
+                                if(filename){
+                                    if(!filename.endsWith(".json"))
+                                        filename+=".json";
+                                    let orgname=json.name;
+                                    let orgdata=json.slices;
+                                    try{
+                                        json.name=filename;//group.filter;
+                                        json.slices=group.items;
+                                        let blob = new Blob([JSON.stringify(json)], {type: "text/json"});
+                                        let url = URL.createObjectURL(blob);
+                                        let a = document.createElement("a");
+                                        a.href = url;
+                                        a.download = filename;
+                                        a.click();
+                                        URL.revokeObjectURL(url);
+                                    }catch(ex){
+                                        document.getElementById("log").innerText=ex;
+                                    }
+                                    json.name=orgname;
+                                    json.slices=orgdata;
+                                }
+                            };
+                            td.appendChild(bt);
+                            tr.appendChild(td);
+                            first=false;
+                        }
+                        let td=document.createElement("td");
+                        td.innerText=item.filename;
+                        tr.appendChild(td);
+                        td=document.createElement("td");
+                        td.innerText=item.nr;
+                        tr.appendChild(td);
+                        td=document.createElement("td");
+                        td.innerText=item.width;
+                        tr.appendChild(td);
+                        td=document.createElement("td");
+                        td.innerText=item.height;
+                        tr.appendChild(td);
+                        tbody.appendChild(tr);
+                    }
+                }
+        }
+    </script>
+    <body>
+        Pick QuickNII JSON file <input type="file" accept="application/json" oninput="load(event)"><br>
+        Type grouping keywords separated by space <input type="text" id="filter" oninput="table()"><br>
+        N.B. groups are placed at the bottom of the table, yet-to-be-sorted elements are displayed on the top.
+        <div id="log"></div>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Store</th>
+                    <th>Section</th>
+                    <th>#</th>
+                    <th>Width</th>
+                    <th>Height</th>
+                </tr>
+            </thead>
+            <tbody id="tbody">
+            </tbody>
+        </table>
+    </body>
+</html>

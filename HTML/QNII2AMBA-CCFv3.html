@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html>
+    <head>
+        <title>NII-to-CCFv3</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width">
+        <style>
+            textarea {
+                display: block;
+                width: 100%;
+            }
+            td{
+                text-align: right;
+            }
+        </style>
+        <script>
+            function fullscreen(){
+                document.getElementById("in").style.height=(window.innerHeight/2-25)+"px";
+            }
+            function parse(){
+                let data=document.getElementById("in").value.split(/[^\d\.]+/).map(x=>parseFloat(x)).filter(x=>!isNaN(x));
+                let html="";
+                for(let i=0;i<data.length-2;i+=3){
+                    let x=data[i],y=data[i+1],z=data[i+2];
+                    html+="<tr>";
+                    html+="<td>"+x+", "+y+", "+z+"</td>";
+                    html+="<td>"+((527-y)*25)+"</td>";
+                    html+="<td>"+((319-z)*25)+"</td>";
+                    html+="<td>"+(x*25)+"</td>";
+                    html+="</tr>";
+                }
+                document.getElementById("out").innerHTML=html;
+            }
+        </script>
+    </head>
+    <body onload="fullscreen();parse();" onresize="fullscreen()">
+        <textarea id="in" autofocus placeholder="Enter QuickNII coordinates here" oninput="parse()">Example:
+  QuickNII origin: 0 0 0
+
+Any occurrences of digits (12) and dots neighbored by digits (1. .2) are treated as coordinates, everything else is considered separator.
+When 3 coordinates are found, a new line is added to the table. 2 1.</textarea><br>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th rowspan="2">QuickNII coordinates (RAS)</th>
+                    <th colspan="3">Allen CCFv3 coordinates (PIR)[um]</th>
+                </tr>
+                <tr>
+                    <th>anteroposterior</th>
+                    <th>inferomedial</th>
+                    <th>mediolateral</th>
+                </tr>
+            </thead>
+            <tbody id="out"></tbody>
+        </table>
+    </body>
+</html>
