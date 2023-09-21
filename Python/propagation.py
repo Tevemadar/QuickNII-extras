@@ -1,6 +1,10 @@
-import math
+import math,re
 
 def propagate(arr):
+  for slice in arr:
+    if "nr" not in slice:
+      slice["nr"]=int(re.search(r"_s(\d+)",slice["filename"]).group(1))
+
   arr.sort(key=lambda slice:slice["nr"])
   
   linregs=[LinReg() for i in range(11)]
@@ -17,7 +21,7 @@ def propagate(arr):
 
   if count>=2:
     l=len(arr)
-    if not "anchorin" in arr[0]:
+    if not "anchoring" in arr[0]:
       nr=arr[0]["nr"]
       a=[linreg.get(nr) for linreg in linregs]
       orthonormalize(a)
