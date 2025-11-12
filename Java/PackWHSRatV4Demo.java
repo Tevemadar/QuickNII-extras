@@ -10,21 +10,25 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPInputStream;
 
 import nii.Nifti1Dataset;
 import parsers.ITKLabel;
 
-public class PackWHSRatV2Demo {
+public class PackWHSRatV4Demo {
     public static void main(String[] args) throws Exception {
+    	
+    	int compressionLevel = 0; // 0: uncompressed, fast for testing. 9: maximum compression, suggested for release
+    	
         try (DataOutputStream dos = new DataOutputStream(
-                new BufferedOutputStream(new FileOutputStream("WHS_Rat_v2_demo.cutlas")))) {
+                new BufferedOutputStream(new FileOutputStream("WHS_Rat_v4_demo.cutlas")))) {
 
             // file format version "v0" (2 bytes)
             dos.writeByte('v');
             dos.writeByte('0');
 
             // name of package
-            dos.writeUTF("WHS Rat v2");
+            dos.writeUTF("WHS Rat v4");
 
             // about text, compressed
             {
@@ -33,7 +37,7 @@ public class PackWHSRatV2Demo {
                 header.writeUTF("<b>Waxholm Space atlas of the Sprague Dawley rat brain</b><br>" + "<br>"
                         + "- MRI: T2*-weighted anatomical MRI at 39 &#xb5;m isotropic resolution<br>"
                         + "- DTI: RGB color FA map at 78 &#xb5;m isotropic resolution<br>"
-                        + "- Segmentation: 79 anatomical structures at 39 &#xb5;m isotropic<br>"
+                        + "- Segmentation: 224 anatomical structures at 39 &#xb5;m isotropic<br>"
                         + "<font color='#FFFFFF'>-</font> resolution<br>" + "<br>"
                         + "Demo package, not for distribution. See more at <a href='https://www.nitrc.org/projects/whs-sd-atlas'>NITRC</a>.");
                 header.close();
@@ -78,8 +82,8 @@ public class PackWHSRatV2Demo {
             // starting volume
             dos.writeByte(2);
 
-            // type 3: 8-bit indexed [type 4: 16-bit indexed]
-            dos.writeByte(3);
+            // type 4: 16-bit indexed [type 3: 8-bit indexed]
+            dos.writeByte(4);
 
             // name
             dos.writeUTF("Segmentation");
@@ -94,7 +98,7 @@ public class PackWHSRatV2Demo {
             // [palette is for indexed data only]
             // palette starting with id=1, compressed
             {
-                Map<Integer, ITKLabel> labels = ITKLabel.parseLabels("WHS_SD_rat_atlas_v2.lbl");
+                Map<Integer, ITKLabel> labels = ITKLabel.parseLabels("WHS_SD_rat_atlas_v4.01.label");
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 DataOutputStream palette = new DataOutputStream(new DeflaterOutputStream(baos, new Deflater(9)));
 
@@ -211,24 +215,25 @@ public class PackWHSRatV2Demo {
             dos.writeDouble(-464);
 
             // number of volumes
-            dos.writeByte(6);
+            dos.writeByte(7);
 
             // MRI, two compressed volumes (MSB volume first, LSB volume next)
             {
                 ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
                 ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
-                DeflaterOutputStream dos1 = new DeflaterOutputStream(baos1, new Deflater(9));
-                DeflaterOutputStream dos2 = new DeflaterOutputStream(baos2, new Deflater(9));
-                // for compressed input volume modify the two filenames and replace BufferedInputStream with GZipInputStream
+                DeflaterOutputStream dos1 = new DeflaterOutputStream(baos1, new Deflater(compressionLevel));
+                DeflaterOutputStream dos2 = new DeflaterOutputStream(baos2, new Deflater(compressionLevel));
                 Nifti1Dataset n1d = new Nifti1Dataset("WHS_SD_rat_T2star_v1.01.nii");
                 n1d.readHeader();
-                try (DataInputStream dis = new DataInputStream(
-                        new BufferedInputStream(new FileInputStream("WHS_SD_rat_T2star_v1.01.nii")))) {
+                try (FileInputStream fis = new FileInputStream(n1d.getDataFilename());
+                	 DataInputStream dis = n1d.getDataFilename().endsWith(".gz")?
+                        new DataInputStream(new GZIPInputStream(fis)):
+                        new DataInputStream(new BufferedInputStream(fis))) {
                     dis.skipBytes((int) n1d.vox_offset);
                     System.out.println("Compressing MRI");
                     for (int i = 0; i < 1024 * 512 * 512; i++) {
                         if ((i & 262143) == 0)
-                            System.out.print("\r" + (1023 - (i >> 18)) + " ");
+                            System.out.print("\rMRI " + (1023 - (i >> 18)) + " ");
                         int w = (int) ((Float.intBitsToFloat(Integer.reverseBytes(dis.readInt())) - 10.203729) * 65535
                                 / (32766 - 10.203729));
                         dos1.write(w >> 8);
@@ -250,18 +255,20 @@ public class PackWHSRatV2Demo {
                 ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
                 ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
                 ByteArrayOutputStream baos3 = new ByteArrayOutputStream();
-                DeflaterOutputStream dos1 = new DeflaterOutputStream(baos1, new Deflater(9));
-                DeflaterOutputStream dos2 = new DeflaterOutputStream(baos2, new Deflater(9));
-                DeflaterOutputStream dos3 = new DeflaterOutputStream(baos3, new Deflater(9));
-                Nifti1Dataset n1d = new Nifti1Dataset("WHS_SD_rat_FA_color_v1.01.nii");
+                DeflaterOutputStream dos1 = new DeflaterOutputStream(baos1, new Deflater(compressionLevel));
+                DeflaterOutputStream dos2 = new DeflaterOutputStream(baos2, new Deflater(compressionLevel));
+                DeflaterOutputStream dos3 = new DeflaterOutputStream(baos3, new Deflater(compressionLevel));
+                Nifti1Dataset n1d = new Nifti1Dataset("WHS_SD_rat_FA_color_v1.01.nii.gz");
                 n1d.readHeader();
-                try (DataInputStream dis = new DataInputStream(
-                        new BufferedInputStream(new FileInputStream("WHS_SD_rat_FA_color_v1.01.nii")))) {
+                try (FileInputStream fis = new FileInputStream(n1d.getDataFilename());
+                   	 DataInputStream dis = n1d.getDataFilename().endsWith(".gz")?
+                           new DataInputStream(new GZIPInputStream(fis)):
+                           new DataInputStream(new BufferedInputStream(fis))) {
                     dis.skipBytes((int) n1d.vox_offset);
                     System.out.println("Compressing DTI");
                     for (int i = 0; i < 1024 * 512 * 512; i++) {
                         if ((i & 262143) == 0)
-                            System.out.print("\r" + (1023 - (i >> 18)) + " ");
+                            System.out.print("\rDTI " + (1023 - (i >> 18)) + " ");
                         dos1.write(dis.readByte());
                         dos2.write(dis.readByte());
                         dos3.write(dis.readByte());
@@ -280,27 +287,36 @@ public class PackWHSRatV2Demo {
                 }
             }
 
-            // Segmentation, one compressed volume
+            // Segmentation, two compressed volumes (MSB volume first, LSB volume next)
             {
                 ByteArrayOutputStream baos1 = new ByteArrayOutputStream();
-                DeflaterOutputStream dos1 = new DeflaterOutputStream(baos1, new Deflater(9));
-                Nifti1Dataset n1d = new Nifti1Dataset("WHS_SD_rat_atlas_v2.nii");
+                ByteArrayOutputStream baos2 = new ByteArrayOutputStream();
+                DeflaterOutputStream dos1 = new DeflaterOutputStream(baos1, new Deflater(compressionLevel));
+                DeflaterOutputStream dos2 = new DeflaterOutputStream(baos2, new Deflater(compressionLevel));
+                Nifti1Dataset n1d = new Nifti1Dataset("WHS_SD_rat_atlas_v4.01.nii.gz");
                 n1d.readHeader();
-                try (DataInputStream dis = new DataInputStream(
-                        new BufferedInputStream(new FileInputStream("WHS_SD_rat_atlas_v2.nii")))) {
+                try (FileInputStream fis = new FileInputStream(n1d.getDataFilename());
+                   	 DataInputStream dis = n1d.getDataFilename().endsWith(".gz")?
+                           new DataInputStream(new GZIPInputStream(fis)):
+                           new DataInputStream(new BufferedInputStream(fis))) {
                     dis.skipBytes((int) n1d.vox_offset);
                     System.out.println("Compressing Segmentation");
                     for (int i = 0; i < 1024 * 512 * 512; i++) {
                         if ((i & 262143) == 0)
-                            System.out.print("\r" + (1023 - (i >> 18)) + " ");
-                        dos1.write(renumber.get(dis.readUnsignedByte()));
-                        dis.skipBytes(1);
+                            System.out.print("\rSeg. " + (1023 - (i >> 18)) + " ");
+                        int voxel = Short.reverseBytes(dis.readShort());
+                        int w = renumber.get(voxel);
+                        dos1.write(w >> 8);
+                        dos2.write(w);
                     }
                     dos1.close();
+                    dos2.close();
                     System.out.println();
                     System.out.println("Writing Segmentation");
                     dos.writeInt(baos1.size());
                     baos1.writeTo(dos);
+                    dos.writeInt(baos2.size());
+                    baos2.writeTo(dos);
                 }
             }
         }
